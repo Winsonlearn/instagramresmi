@@ -1,0 +1,57 @@
+{# Example Usage of Neon Components #}
+{# This file demonstrates how to use all the neon components #}
+
+{% from 'components/__init__.html' import neon_button, neon_input, neon_card, neon_modal, neon_avatar, neon_badge, neon_dropdown, neon_dropdown_item %}
+
+{# Example: Buttons #}
+<div class="flex gap-4 mb-8">
+    {{ neon_button('primary', 'Primary Button', href='/link') }}
+    {{ neon_button('secondary', 'Secondary Button') }}
+    {{ neon_button('ghost', 'Ghost Button', icon='✨') }}
+    {{ neon_button('danger', 'Delete', size='sm') }}
+</div>
+
+{# Example: Input #}
+{{ neon_input('username', 'text', 'Enter username', label='Username', required=True) }}
+{{ neon_input('password', 'password', 'Enter password', label='Password', required=True) }}
+
+{# Example: Card #}
+{% call neon_card('Card Title') %}
+    <p>This is card content with glassmorphism effect.</p>
+    <p class="mt-4">More content here...</p>
+{% endcall %}
+
+{# Example: Modal #}
+{% call neon_modal('example-modal', 'Example Modal', 'lg') %}
+    <p>Modal content goes here</p>
+    <div class="mt-4 flex gap-2 justify-end">
+        <button onclick="closeModal('example-modal')" class="px-4 py-2 rounded-lg glass border border-neon-cyan/30 hover:border-neon-cyan">
+            Close
+        </button>
+    </div>
+{% endcall %}
+
+<button onclick="openModal('example-modal')">Open Modal</button>
+
+{# Example: Avatar #}
+<div class="flex gap-4 mb-8">
+    {{ neon_avatar('https://via.placeholder.com/100', 'User', 'md', online=True) }}
+    {{ neon_avatar('https://via.placeholder.com/100', 'User', 'lg', verified=True) }}
+</div>
+
+{# Example: Badge #}
+<div class="flex gap-4 mb-8">
+    {{ neon_badge('New', 'notification', pulse=True) }}
+    {{ neon_badge('Verified', 'verified') }}
+    {{ neon_badge('Success', 'success') }}
+</div>
+
+{# Example: Dropdown #}
+{% call neon_dropdown('example-dropdown', 'Menu', '☰') %}
+    {{ neon_dropdown_item('Profile', '/profile', icon='👤') }}
+    {{ neon_dropdown_item('Settings', '/settings', icon='⚙️') }}
+    {{ neon_dropdown_item(divider=True) }}
+    {{ neon_dropdown_item('Logout', '/logout', icon='🚪', danger=True) }}
+{% endcall %}
+
+

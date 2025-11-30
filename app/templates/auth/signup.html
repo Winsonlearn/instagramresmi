@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Instagram{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1 class="nav-logo" style="font-size: 51px; margin-bottom: 12px; text-align: center;">Instagram</h1>
+    <p style="text-align: center; color: var(--ig-text-secondary); font-size: 17px; font-weight: 600; margin-bottom: 20px; line-height: 20px;">
+        Sign up to see photos and videos from your friends.
+    </p>
+    
+    <form method="POST" style="margin-top: 24px;">
+        {{ form.hidden_tag() }}
+        
+        <div class="form-group">
+            {{ form.email(class="form-control", placeholder="Mobile Number or Email") }}
+            {% if form.email.errors %}
+                <div class="form-errors" style="color: var(--ig-error); font-size: 12px; margin-top: 4px;">
+                    {% for error in form.email.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.fullname(class="form-control", placeholder="Full Name") }}
+            {% if form.fullname.errors %}
+                <div class="form-errors" style="color: var(--ig-error); font-size: 12px; margin-top: 4px;">
+                    {% for error in form.fullname.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.username(class="form-control", placeholder="Username") }}
+            {% if form.username.errors %}
+                <div class="form-errors" style="color: var(--ig-error); font-size: 12px; margin-top: 4px;">
+                    {% for error in form.username.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.password(class="form-control", placeholder="Password") }}
+            {% if form.password.errors %}
+                <div class="form-errors" style="color: var(--ig-error); font-size: 12px; margin-top: 4px;">
+                    {% for error in form.password.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+            {{ form.agreement(class="form-check-input") }}
+            {{ form.agreement.label(class="form-check-label", style="font-size: 12px; color: var(--ig-text-primary);") }}
+            {% if form.agreement.errors %}
+                <div class="form-errors" style="color: var(--ig-error); font-size: 12px; margin-top: 4px;">
+                    {% for error in form.agreement.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        {{ form.submit(class="btn btn-primary", style="width: 100%; margin-bottom: 12px;") }}
+    </form>
+    
+    <div style="text-align: center; margin: 16px 0;">
+        <p style="font-size: 12px; color: var(--ig-text-secondary); line-height: 16px; margin: 10px 20px;">
+            People who use our service may have uploaded your contact information to Instagram. <a href="#" style="color: var(--ig-text-secondary); text-decoration: none;">Learn More</a>
+        </p>
+        <p style="font-size: 12px; color: var(--ig-text-secondary); line-height: 16px; margin: 10px 20px;">
+            By signing up, you agree to our <a href="#" style="color: var(--ig-text-secondary); text-decoration: none;">Terms</a>, <a href="#" style="color: var(--ig-text-secondary); text-decoration: none;">Privacy Policy</a> and <a href="#" style="color: var(--ig-text-secondary); text-decoration: none;">Cookies Policy</a>.
+        </p>
+    </div>
+</div>
+
+<div style="max-width: 350px; margin: 10px auto; padding: 20px; background-color: var(--ig-primary); border: 1px solid var(--ig-border); border-radius: 1px;">
+    <p style="text-align: center; font-size: 14px; color: var(--ig-text-primary); margin: 0;">
+        Have an account? <a href="{{ url_for('auth.login') }}" style="color: var(--ig-link); text-decoration: none; font-weight: 600;">Log in</a>
+    </p>
+</div>
+{% endblock %}

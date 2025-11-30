@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Instagram{% endblock %}
+
+{% block content %}
+<div class="notifications-page">
+    <div class="notifications-container">
+        <div class="notifications-header">
+            <h2 class="notifications-title">Notifications</h2>
+            {% if notifications %}
+            <form method="POST" action="{{ url_for('notifications.mark_all_read') }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-mark-all">Mark all as read</button>
+            </form>
+            {% endif %}
+        </div>
+        
+        {% if notifications %}
+            <div class="notifications-list">
+                {% for notification in notifications %}
+                <div class="notification-item {% if not notification.read %}notification-unread{% endif %}">
+                    {% if notification.from_user %}
+                    <a href="{{ url_for('profiles.view', username=notification.from_user.username) }}" class="notification-avatar-link">
+                        <img src="{{ url_for('uploaded_file', folder='profiles', filename=notification.from_user.profile_picture) if notification.from_user.profile_picture else url_for('static', filename='default-avatar.png') }}" 
+                             alt="{{ notification.from_user.username }}"
+                             class="notification-avatar"
+                             onerror="this.src='{{ url_for('static', filename='default-avatar.png') }}'">
+                    </a>
+                    {% else %}
+                    <div class="notification-avatar-link">
+                        <div class="notification-avatar" style="background-color: var(--ig-border); display: flex; align-items: center; justify-content: center; color: var(--ig-text-secondary); font-size: 18px; font-weight: 600;">
+                            ?
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="notification-content">
+                        <div class="notification-text">
+                            {% if notification.from_user %}
+                            <a href="{{ url_for('profiles.view', username=notification.from_user.username) }}" class="notification-username">
+                                {{ notification.from_user.username }}
+                            </a>
+                            {% else %}
+                            <span class="notification-username" style="cursor: default;">Someone</span>
+                            {% endif %}
+                            <span class="notification-action">
+                            {% if notification.notification_type == 'like' %}
+                                liked your 
+                                {% if notification.post %}
+                                    <a href="{{ url_for('posts.detail', post_id=notification.post.id) }}" class="notification-post-link">
+                                        {% if notification.post.caption %}
+                                            "{{ notification.post.caption[:30] }}{% if notification.post.caption|length > 30 %}...{% endif %}"
+                                        {% else %}
+                                            post
+                                        {% endif %}
+                                    </a>
+                                {% else %}
+                                    post
+                                {% endif %}
+                            {% elif notification.notification_type == 'comment' %}
+                                commented: 
+                                {% if notification.comment %}
+                                    "{{ notification.comment.content[:50] }}{% if notification.comment.content|length > 50 %}...{% endif %}"
+                                {% else %}
+                                    on your post
+                                {% endif %}
+                                {% if notification.post %}
+                                    <a href="{{ url_for('posts.detail', post_id=notification.post.id) }}" class="notification-post-link">View post</a>
+                                {% endif %}
+                            {% elif notification.notification_type == 'follow' %}
+                                started following you
+                            {% elif notification.notification_type == 'message' %}
+                                sent you a message
+                            {% else %}
+                                {{ notification.notification_type }}
+                            {% endif %}
+                            </span>
+                        </div>
+                        <div class="notification-time" data-timestamp="{{ notification.created_at.isoformat() if notification.created_at else '' }}">
+                            {% if notification.created_at %}
+                                {{ notification.created_at.strftime('%b %d, %Y') }}
+                            {% else %}
+                                Just now
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if notification.post and notification.post.image_url %}
+                        <a href="{{ url_for('posts.detail', post_id=notification.post.id) }}" class="notification-post-preview">
+                            <img src="{{ url_for('uploaded_file', folder='posts', filename=notification.post.image_url) }}" 
+                                 alt="Post preview"
+                                 class="notification-preview-img"
+                                 onerror="this.style.display='none'">
+                        </a>
+                    {% endif %}
+                    
+                    {% if not notification.read %}
+                    <div class="notification-unread-dot"></div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="notifications-empty">
+                <p class="notifications-empty-text">No notifications yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Format notification timestamps like Instagram
+document.querySelectorAll('.notification-time[data-timestamp]').forEach(el => {
+    const timestamp = el.getAttribute('data-timestamp');
+    if (!timestamp) return;
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = (now - date) / 1000; // seconds
+    
+    if (diff < 60) {
+        el.textContent = 'Just now';
+    } else if (diff < 3600) {
+        const minutes = Math.floor(diff / 60);
+        el.textContent = minutes + 'm';
+    } else if (diff < 86400) {
+        const hours = Math.floor(diff / 3600);
+        el.textContent = hours + 'h';
+    } else if (diff < 604800) {
+        const days = Math.floor(diff / 86400);
+        el.textContent = days + 'd';
+    } else {
+        // Keep the original date format
+        const month = date.toLocaleDateString('en-US', { month: 'short' });
+        const day = date.getDate();
+        el.textContent = month + ' ' + day;
+    }
+});
+</script>
+{% endblock %}
+

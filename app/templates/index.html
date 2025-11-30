@@ -1,0 +1,13 @@
+{% extends "base.html" %} {% block title %}Welcome - Instagram Clone{% endblock
+%} {% block content %}
+<div style="text-align: center; padding: 100px 20px">
+  <h1 style="font-size: 48px; margin-bottom: 20px">Instagram Clone</h1>
+  <p style="font-size: 20px; color: #8e8e8e; margin-bottom: 40px">
+    Share your moments with the world
+  </p>
+  <div style="display: flex; gap: 16px; justify-content: center">
+    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Log In</a>
+    <a href="{{ url_for('auth.signup') }}" class="btn btn-secondary">Sign Up</a>
+  </div>
+</div>
+{% endblock %}

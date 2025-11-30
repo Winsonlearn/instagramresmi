@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Search - Instagram Clone{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 30px; max-width: 614px;">
+    <div class="card" style="padding: 24px; margin-bottom: 24px;">
+        <h2 style="margin-bottom: 20px; color: var(--neon-blue); text-shadow: var(--glow-blue);">Search</h2>
+        <form method="GET" action="{{ url_for('main.search') }}">
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <input type="text" name="q" value="{{ query }}" placeholder="Search users or #hashtags..." 
+                       class="form-control" style="flex: 1;" autofocus>
+                <button type="submit" class="btn btn-primary">🔍</button>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <label style="color: var(--text-secondary); cursor: pointer;">
+                    <input type="radio" name="type" value="user" {% if search_type == 'user' %}checked{% endif %} 
+                           onchange="this.form.submit()" style="margin-right: 6px;">
+                    Users
+                </label>
+                <label style="color: var(--text-secondary); cursor: pointer;">
+                    <input type="radio" name="type" value="hashtag" {% if search_type == 'hashtag' %}checked{% endif %} 
+                           onchange="this.form.submit()" style="margin-right: 6px;">
+                    Hashtags
+                </label>
+            </div>
+        </form>
+    </div>
+    
+    {% if query %}
+        {% if search_type == 'hashtag' %}
+            {% if posts %}
+                <div class="card" style="padding: 16px;">
+                    <h3 style="margin-bottom: 16px; color: var(--neon-purple);">#{{ query.lstrip('#') }}</h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">
+                        {% for post in posts %}
+                        <a href="{{ url_for('posts.detail', post_id=post.id) }}" style="aspect-ratio: 1; overflow: hidden;">
+                            <img src="{{ url_for('uploaded_file', folder='posts', filename=post.image_url) }}" 
+                                 alt="Post"
+                                 style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;"
+                                 onmouseover="this.style.transform='scale(1.05)'"
+                                 onmouseout="this.style.transform='scale(1)'">
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="card" style="padding: 40px; text-align: center;">
+                    <p style="color: var(--text-secondary);">No posts found with hashtag #{{ query.lstrip('#') }}</p>
+                </div>
+            {% endif %}
+        {% else %}
+            {% if users %}
+                <div class="card" style="padding: 16px;">
+                    <h3 style="margin-bottom: 16px; color: var(--neon-blue);">Results for "{{ query }}"</h3>
+                    {% for user in users %}
+                    <div style="display: flex; align-items: center; gap: 16px; padding: 16px; border-bottom: 1px solid rgba(0, 240, 255, 0.2); transition: background 0.3s ease;" 
+                         onmouseover="this.style.background='rgba(0, 240, 255, 0.1)'"
+                         onmouseout="this.style.background='transparent'">
+                        <a href="{{ url_for('profiles.view', username=user.username) }}">
+                            <img src="{{ url_for('uploaded_file', folder='profiles', filename=user.profile_picture) if user.profile_picture else 'https://via.placeholder.com/50' }}" 
+                                 alt="{{ user.username }}"
+                                 style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--neon-blue);"
+                                 onerror="this.src='https://via.placeholder.com/50'">
+                        </a>
+                        <div style="flex: 1;">
+                            <a href="{{ url_for('profiles.view', username=user.username) }}" 
+                               class="hashtag-link" style="font-weight: 600;">
+                                {{ user.username }}
+                            </a>
+                            <div style="color: var(--text-secondary); font-size: 14px;">{{ user.fullname }}</div>
+                        </div>
+                        {% if user.id != current_user.id %}
+                        <button onclick="toggleFollow('{{ user.username }}')" 
+                                class="btn {% if current_user.is_following(user) %}btn-secondary{% else %}btn-primary{% endif %}"
+                                id="follow-btn-{{ user.username }}">
+                            {% if current_user.is_following(user) %}Unfollow{% else %}Follow{% endif %}
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card" style="padding: 40px; text-align: center;">
+                    <p style="color: var(--text-secondary);">No users found matching "{{ query }}"</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    {% else %}
+        <div class="card" style="padding: 40px; text-align: center;">
+            <p style="color: var(--text-secondary);">Enter a search query to find users or hashtags</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleFollow(username) {
+    fetch(`/profile/${username}/follow`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        const btn = document.getElementById(`follow-btn-${username}`);
+        if (btn) {
+            btn.textContent = data.is_following ? 'Unfollow' : 'Follow';
+            btn.className = data.is_following ? 'btn btn-secondary' : 'btn btn-primary';
+        }
+    });
+}
+</script>
+{% endblock %}
+

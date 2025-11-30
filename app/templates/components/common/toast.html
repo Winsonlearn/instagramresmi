@@ -1,0 +1,168 @@
+{# Toast/Notification Component - Neon Theme #}
+{# Usage: Use JavaScript: showToast('Message', 'success') #}
+
+<div id="toast-container" class="fixed bottom-4 right-4 z-[10000] flex flex-col gap-3 pointer-events-none">
+    {# Toasts will be dynamically inserted here #}
+</div>
+
+<style>
+    .toast-neon {
+        pointer-events: auto;
+        padding: 16px 24px;
+        background: rgba(26, 26, 26, 0.95);
+        backdrop-filter: blur(20px);
+        border: 2px solid;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        max-width: 350px;
+        animation: slideInRight 0.3s ease-out;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .toast-neon::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: currentColor;
+    }
+    
+    .toast-neon.success {
+        color: var(--neon-lime);
+        border-color: var(--neon-lime);
+        box-shadow: var(--glow-lime);
+    }
+    
+    .toast-neon.error {
+        color: var(--neon-pink);
+        border-color: var(--neon-pink);
+        box-shadow: var(--glow-pink);
+    }
+    
+    .toast-neon.info {
+        color: var(--neon-cyan);
+        border-color: var(--neon-cyan);
+        box-shadow: var(--glow-cyan);
+    }
+    
+    .toast-neon.warning {
+        color: #fbbf24;
+        border-color: #fbbf24;
+        box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .toast-neon.slide-out {
+        animation: slideOutRight 0.3s ease-out forwards;
+    }
+    
+    .toast-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .toast-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    
+    .toast-message {
+        flex: 1;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: currentColor;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+        flex-shrink: 0;
+    }
+    
+    .toast-close:hover {
+        opacity: 1;
+    }
+</style>
+
+<script>
+    function showToast(message, type = 'info', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        toast.className = `toast-neon ${type}`;
+        
+        const icons = {
+            success: '✓',
+            error: '✕',
+            info: 'ℹ',
+            warning: '⚠'
+        };
+        
+        toast.innerHTML = `
+            <div class="toast-content">
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="removeToast(this.parentElement.parentElement)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto remove after duration
+        setTimeout(() => {
+            removeToast(toast);
+        }, duration);
+    }
+    
+    function removeToast(toast) {
+        if (!toast) return;
+        toast.classList.add('slide-out');
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.parentElement.removeChild(toast);
+            }
+        }, 300);
+    }
+    
+    // Make it globally available
+    window.showToast = showToast;
+</script>
+
+

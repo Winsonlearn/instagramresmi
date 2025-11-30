@@ -1,0 +1,36 @@
+{% extends "base.html" %} {% block title %}Edit Comment - Instagram Clone{%
+endblock %} {% block content %}
+<div class="container" style="padding-top: 30px; max-width: 614px">
+  <div class="card" style="padding: 24px">
+    <h2 style="margin-bottom: 24px">Edit Comment</h2>
+
+    <form method="POST">
+      {% if form %}{{ form.hidden_tag() }}{% endif %}
+      <div class="form-group">
+        <label>Comment</label>
+        {% if form %} {{ form.content(class="form-control", rows="4") }} {% else
+        %}
+        <textarea
+          name="content"
+          class="form-control"
+          required
+          maxlength="2200"
+          rows="4"
+        >
+{{ comment.content }}</textarea
+        >
+        {% endif %}
+      </div>
+
+      <div style="display: flex; gap: 8px">
+        <button type="submit" class="btn btn-primary">Update Comment</button>
+        <a
+          href="{{ url_for('posts.detail', post_id=comment.post_id) }}"
+          class="btn btn-secondary"
+          >Cancel</a
+        >
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

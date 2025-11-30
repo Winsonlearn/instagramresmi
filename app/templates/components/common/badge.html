@@ -1,0 +1,37 @@
+{# Badge Component - Neon Theme #}
+{# Usage: {% include 'components/common/badge.html' %} #}
+
+{% macro neon_badge(text, variant='default', size='md', pulse=False, class='') %}
+    {% set base_classes = 'badge-neon inline-flex items-center justify-center font-semibold rounded-full transition-base' %}
+    
+    {% set size_classes = {
+        'xs': 'px-2 py-0.5 text-xs',
+        'sm': 'px-2.5 py-1 text-xs',
+        'md': 'px-3 py-1.5 text-sm',
+        'lg': 'px-4 py-2 text-base'
+    } %}
+    
+    {% set variant_classes = {
+        'default': 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan glow-cyan-sm',
+        'notification': 'bg-neon-pink text-white border border-neon-pink glow-pink animate-pulse-glow-pink',
+        'success': 'bg-neon-lime/20 text-neon-lime border border-neon-lime glow-lime-sm',
+        'warning': 'bg-yellow-500/20 text-yellow-400 border border-yellow-400',
+        'error': 'bg-red-500/20 text-red-400 border border-red-400',
+        'verified': 'bg-neon-cyan text-dark-bg border border-neon-cyan glow-cyan-sm'
+    } %}
+    
+    <span class="{{ base_classes }} {{ size_classes.get(size, 'px-3 py-1.5 text-sm') }} {{ variant_classes.get(variant, variant_classes['default']) }} {% if pulse %}animate-pulse-glow-cyan{% endif %} {{ class }}">
+        {{ text }}
+    </span>
+{% endmacro %}
+
+{# Notification Badge (for icons) #}
+{% macro neon_notification_badge(count=0, max=99, class='') %}
+    {% if count > 0 %}
+        <span class="notification-badge-neon absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1.5 flex items-center justify-center text-xs font-bold text-white bg-gradient-to-r from-neon-pink to-neon-purple rounded-full border-2 border-dark-bg glow-pink animate-pulse-glow-pink {{ class }}">
+            {{ count if count <= max else max ~ '+' }}
+        </span>
+    {% endif %}
+{% endmacro %}
+
+

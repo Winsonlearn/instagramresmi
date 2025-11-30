@@ -1,0 +1,344 @@
+{% extends "base.html" %} {% block title %}Feed - Instagram Clone{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 614px; margin: 0 auto">
+  {% if posts.items %} {% for post in posts.items %}
+  <div class="card">
+    <div class="card-header">
+      <a href="{{ url_for('profiles.view', username=post.user.username) }}">
+        <img
+          src="{{ url_for('uploaded_file', folder='profiles', filename=post.user.profile_picture) if post.user.profile_picture else 'https://via.placeholder.com/32' }}"
+          alt="{{ post.user.username }}"
+          onerror="this.src='https://via.placeholder.com/32'"
+        />
+      </a>
+      <a href="{{ url_for('profiles.view', username=post.user.username) }}"
+        >{{ post.user.username }}</a
+      >
+    </div>
+
+    <div
+      class="card-image"
+      id="post-image-{{ post.id }}"
+      style="position: relative; cursor: pointer"
+      ondblclick="handleDoubleTap({{ post.id }})"
+    >
+      <img
+        data-src="{{ url_for('uploaded_file', folder='posts', filename=post.image_url) }}"
+        alt="Post by {{ post.user.username }}"
+        class="lazy-image"
+        style="
+          width: 100%;
+          height: auto;
+          background: var(--ig-secondary);
+          min-height: 300px;
+        "
+        onerror="this.src='https://via.placeholder.com/614'; this.classList.add('loaded');"
+      />
+      <div
+        id="double-tap-heart-{{ post.id }}"
+        class="double-tap-heart"
+        style="display: none"
+      >
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="#ed4956">
+          <path
+            d="M16.792 3.904A4.989 4.989 0 0121.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752-.477-.309-2.143-1.823-4.303-3.752C5.141 14.072 2.5 12.167 2.5 9.122a4.989 4.989 0 014.708-5.218 4.21 4.21 0 013.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.11-1.766a4.17 4.17 0 013.679-1.938m0-2a6.04 6.04 0 00-4.797 2.127 6.052 6.052 0 00-4.787-2.127A6.985 6.985 0 00.5 9.122c0 3.61 2.55 5.827 5.015 7.97.283.246.569.494.853.747l1.027.918a44.998 44.998 0 003.518 3.018 2 2 0 002.174 0 45.263 45.263 0 003.626-3.115l.922-.824c.293-.26.59-.519.885-.774 2.334-2.025 4.98-4.32 4.98-7.94a6.985 6.985 0 00-6.708-7.218z"
+          ></path>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card-content">
+      <div class="card-actions">
+        <a
+          href="#"
+          onclick="toggleLike({{ post.id }}); return false;"
+          id="like-btn-{{ post.id }}"
+          class="{% if post.is_liked_by(current_user) %}liked{% endif %}"
+        >
+          {% if post.is_liked_by(current_user) %}
+          <svg
+            aria-label="Unlike"
+            class="x1lliihq x1n2onr6 x5n08af"
+            fill="#ed4956"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M16.792 3.904A4.989 4.989 0 0121.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752-.477-.309-2.143-1.823-4.303-3.752C5.141 14.072 2.5 12.167 2.5 9.122a4.989 4.989 0 014.708-5.218 4.21 4.21 0 013.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.11-1.766a4.17 4.17 0 013.679-1.938m0-2a6.04 6.04 0 00-4.797 2.127 6.052 6.052 0 00-4.787-2.127A6.985 6.985 0 00.5 9.122c0 3.61 2.55 5.827 5.015 7.97.283.246.569.494.853.747l1.027.918a44.998 44.998 0 003.518 3.018 2 2 0 002.174 0 45.263 45.263 0 003.626-3.115l.922-.824c.293-.26.59-.519.885-.774 2.334-2.025 4.98-4.32 4.98-7.94a6.985 6.985 0 00-6.708-7.218z"
+            ></path>
+          </svg>
+          {% else %}
+          <svg
+            aria-label="Like"
+            class="x1lliihq x1n2onr6 x5n08af"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M16.792 3.904A4.989 4.989 0 0121.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752-.477-.309-2.143-1.823-4.303-3.752C5.141 14.072 2.5 12.167 2.5 9.122a4.989 4.989 0 014.708-5.218 4.21 4.21 0 013.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.11-1.766a4.17 4.17 0 013.679-1.938m0-2a6.04 6.04 0 00-4.797 2.127 6.052 6.052 0 00-4.787-2.127A6.985 6.985 0 00.5 9.122c0 3.61 2.55 5.827 5.015 7.97.283.246.569.494.853.747l1.027.918a44.998 44.998 0 003.518 3.018 2 2 0 002.174 0 45.263 45.263 0 003.626-3.115l.922-.824c.293-.26.59-.519.885-.774 2.334-2.025 4.98-4.32 4.98-7.94a6.985 6.985 0 00-6.708-7.218z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            ></path>
+          </svg>
+          {% endif %}
+        </a>
+        <a href="{{ url_for('posts.detail', post_id=post.id) }}">
+          <svg
+            aria-label="Comment"
+            class="x1lliihq x1n2onr6 x5n08af"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M20.656 17.008a9.993 9.993 0 10-3.59 3.615L22 22z"
+              fill="none"
+              stroke="currentColor"
+              stroke-linejoin="round"
+              stroke-width="2"
+            ></path>
+          </svg>
+        </a>
+        <a
+          href="#"
+          onclick="toggleBookmark({{ post.id }}); return false;"
+          id="bookmark-btn-{{ post.id }}"
+          class="{% if post.is_bookmarked_by(current_user) %}bookmarked{% endif %}"
+        >
+          {% if post.is_bookmarked_by(current_user) %}
+          <svg
+            aria-label="Remove"
+            class="x1lliihq x1n2onr6 x5n08af"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M20 13a1 1 0 00-1 1v6a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1h6a1 1 0 000 2H7v12h10v-5a1 1 0 011-1zM8 8a1 1 0 000 2h8a1 1 0 100-2H8z"
+            ></path>
+          </svg>
+          {% else %}
+          <svg
+            aria-label="Save"
+            class="x1lliihq x1n2onr6 x5n08af"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <polygon
+              fill="none"
+              points="20 21 12 13.44 4 21 4 3 20 3 20 21"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+            ></polygon>
+          </svg>
+          {% endif %}
+        </a>
+      </div>
+
+      <div class="card-likes" id="likes-{{ post.id }}">
+        {{ post.like_count() }} likes
+      </div>
+
+      <div class="card-caption">
+        <strong
+          ><a
+            href="{{ url_for('profiles.view', username=post.user.username) }}"
+            class="hashtag-link"
+            >{{ post.user.username }}</a
+          ></strong
+        >
+        {% if post.caption %} {% set caption = post.caption %} {% set words =
+        caption.split() %} {% for word in words %} {% if word.startswith('#') %}
+        <a
+          href="{{ url_for('main.search') }}?q={{ word[1:] }}&type=hashtag"
+          class="hashtag-link"
+          >{{ word }}</a
+        >
+        {% else %} {{ word }} {% endif %} {% endfor %} {% endif %}
+      </div>
+
+      {% if post.comment_count() > 0 %}
+      <div style="margin-top: 8px">
+        <a
+          href="{{ url_for('posts.detail', post_id=post.id) }}"
+          class="card-comments"
+        >
+          View all {{ post.comment_count() }} comments
+        </a>
+      </div>
+      {% endif %}
+
+      <div class="card-time">{{ post.created_at.strftime('%B %d, %Y') }}</div>
+    </div>
+  </div>
+  {% endfor %} {% else %}
+  <div style="text-align: center; padding: 60px 20px">
+    <h2 style="margin-bottom: 16px; color: var(--ig-text-primary)">
+      No posts yet
+    </h2>
+    <p style="color: var(--ig-text-secondary); margin-bottom: 24px">
+      Follow people to see their photos and videos here.
+    </p>
+    <a href="{{ url_for('main.explore') }}" class="btn btn-primary">Explore</a>
+  </div>
+  {% endif %} {% if posts.pages > 1 %}
+  <div style="text-align: center; margin-top: 24px; padding: 20px">
+    {% if posts.has_prev %}
+    <a
+      href="{{ url_for('main.feed', page=posts.prev_num) }}"
+      class="btn btn-secondary"
+      >Previous</a
+    >
+    {% endif %}
+
+    <span style="margin: 0 16px; color: var(--ig-text-secondary)"
+      >Page {{ posts.page }} of {{ posts.pages }}</span
+    >
+
+    {% if posts.has_next %}
+    <a
+      href="{{ url_for('main.feed', page=posts.next_num) }}"
+      class="btn btn-secondary"
+      >Next</a
+    >
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  // Double tap to like
+  let tapTimer = null;
+  let tapCount = 0;
+
+  function handleDoubleTap(postId) {
+      tapCount++;
+      if (tapCount === 1) {
+          tapTimer = setTimeout(() => {
+              tapCount = 0;
+          }, 300);
+      } else if (tapCount === 2) {
+          clearTimeout(tapTimer);
+          tapCount = 0;
+          // Show heart animation
+          const heart = document.getElementById(`double-tap-heart-${postId}`);
+          const postImage = document.getElementById(`post-image-${postId}`);
+          heart.style.display = 'block';
+          heart.style.position = 'absolute';
+          heart.style.top = '50%';
+          heart.style.left = '50%';
+          heart.style.transform = 'translate(-50%, -50%)';
+          heart.style.zIndex = '10';
+
+          setTimeout(() => {
+              heart.style.display = 'none';
+          }, 600);
+
+          // Like the post if not already liked
+          toggleLike(postId);
+      }
+  }
+
+  function toggleLike(postId) {
+      if (!window.AppUtils) {
+          console.error('AppUtils not loaded');
+          return;
+      }
+
+      window.AppUtils.LoadingManager.show(document.getElementById(`post-image-${postId}`).parentElement);
+
+      fetch(`/posts/${postId}/like`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'}
+      })
+      .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok');
+          return response.json();
+      })
+      .then(data => {
+          const btn = document.getElementById(`like-btn-${postId}`);
+          const likes = document.getElementById(`likes-${postId}`);
+          if (data.liked) {
+              btn.innerHTML = '<svg aria-label="Unlike" class="x1lliihq x1n2onr6 x5n08af" fill="#ed4956" height="24" role="img" viewBox="0 0 24 24" width="24"><path d="M16.792 3.904A4.989 4.989 0 0121.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752-.477-.309-2.143-1.823-4.303-3.752C5.141 14.072 2.5 12.167 2.5 9.122a4.989 4.989 0 014.708-5.218 4.21 4.21 0 013.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.11-1.766a4.17 4.17 0 013.679-1.938m0-2a6.04 6.04 0 00-4.797 2.127 6.052 6.052 0 00-4.787-2.127A6.985 6.985 0 00.5 9.122c0 3.61 2.55 5.827 5.015 7.97.283.246.569.494.853.747l1.027.918a44.998 44.998 0 003.518 3.018 2 2 0 002.174 0 45.263 45.263 0 003.626-3.115l.922-.824c.293-.26.59-.519.885-.774 2.334-2.025 4.98-4.32 4.98-7.94a6.985 6.985 0 00-6.708-7.218z"></path></svg>';
+              btn.classList.add('liked');
+          } else {
+              btn.innerHTML = '<svg aria-label="Like" class="x1lliihq x1n2onr6 x5n08af" fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><path d="M16.792 3.904A4.989 4.989 0 0121.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752-.477-.309-2.143-1.823-4.303-3.752C5.141 14.072 2.5 12.167 2.5 9.122a4.989 4.989 0 014.708-5.218 4.21 4.21 0 013.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.11-1.766a4.17 4.17 0 013.679-1.938m0-2a6.04 6.04 0 00-4.797 2.127 6.052 6.052 0 00-4.787-2.127A6.985 6.985 0 00.5 9.122c0 3.61 2.55 5.827 5.015 7.97.283.246.569.494.853.747l1.027.918a44.998 44.998 0 003.518 3.018 2 2 0 002.174 0 45.263 45.263 0 003.626-3.115l.922-.824c.293-.26.59-.519.885-.774 2.334-2.025 4.98-4.32 4.98-7.94a6.985 6.985 0 00-6.708-7.218z" fill="none" stroke="currentColor" stroke-width="2"></path></svg>';
+              btn.classList.remove('liked');
+          }
+          likes.textContent = `${data.like_count} likes`;
+
+          if (data.liked) {
+              window.AppUtils.Toast.success('Liked!');
+          } else {
+              window.AppUtils.Toast.info('Unliked');
+          }
+      })
+      .catch(error => {
+          window.AppUtils.ErrorHandler.handleError(error, 'Failed to update like. Please try again.');
+      })
+      .finally(() => {
+          window.AppUtils.LoadingManager.hide();
+      });
+  }
+
+  function toggleBookmark(postId) {
+      if (!window.AppUtils) {
+          console.error('AppUtils not loaded');
+          return;
+      }
+
+      fetch(`/posts/${postId}/bookmark`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'}
+      })
+      .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok');
+          return response.json();
+      })
+      .then(data => {
+          const btn = document.getElementById(`bookmark-btn-${postId}`);
+          if (data.bookmarked) {
+              btn.innerHTML = '<svg aria-label="Remove" class="x1lliihq x1n2onr6 x5n08af" fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><path d="M20 13a1 1 0 00-1 1v6a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1h6a1 1 0 000 2H7v12h10v-5a1 1 0 011-1zM8 8a1 1 0 000 2h8a1 1 0 100-2H8z"></path></svg>';
+              btn.classList.add('bookmarked');
+              window.AppUtils.Toast.success('Saved to bookmarks!');
+          } else {
+              btn.innerHTML = '<svg aria-label="Save" class="x1lliihq x1n2onr6 x5n08af" fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><polygon fill="none" points="20 21 12 13.44 4 21 4 3 20 3 20 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon></svg>';
+              btn.classList.remove('bookmarked');
+              window.AppUtils.Toast.info('Removed from bookmarks');
+          }
+      })
+      .catch(error => {
+          window.AppUtils.ErrorHandler.handleError(error, 'Failed to update bookmark. Please try again.');
+      });
+  }
+
+  // Infinite scroll (optional enhancement)
+  let isLoading = false;
+  {% if posts.has_next %}
+  window.addEventListener('scroll', function() {
+      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+          if (!isLoading) {
+              isLoading = true;
+              // Load next page
+              window.location.href = "{{ url_for('main.feed', page=posts.next_num) }}";
+          }
+      }
+  });
+  {% endif %}
+</script>
+{% endblock %}

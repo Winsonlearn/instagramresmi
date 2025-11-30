@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Post - Instagram Clone{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 30px; max-width: 614px;">
+    <div class="card" style="padding: 24px;">
+        <h2 style="margin-bottom: 24px;">Edit Post</h2>
+        
+        <div style="margin-bottom: 24px;">
+            <img src="{{ url_for('uploaded_file', folder='posts', filename=post.image_url) }}" 
+                 alt="Post image" 
+                 style="width: 100%; border-radius: 8px; max-height: 400px; object-fit: contain;">
+        </div>
+        
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.caption.label }}
+                {{ form.caption(class="form-control", rows="4") }}
+                {% if form.caption.errors %}
+                    <div style="color: #ed4956; margin-top: 4px;">
+                        {% for error in form.caption.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-top: 16px;">
+                <button type="submit" class="btn btn-primary">Update Post</button>
+                <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

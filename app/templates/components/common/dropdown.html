@@ -1,0 +1,111 @@
+{# Dropdown Component - Neon Theme #}
+{# Usage: {% include 'components/common/dropdown.html' %} #}
+
+{% macro neon_dropdown(id, trigger_text='Menu', trigger_icon=None, position='right', class='') %}
+    <div class="dropdown-neon relative inline-block {{ class }}" data-dropdown-id="{{ id }}">
+        {# Trigger Button #}
+        <button 
+            onclick="toggleDropdown('{{ id }}')" 
+            class="dropdown-trigger flex items-center gap-2 px-4 py-2 glass border border-neon-cyan/30 rounded-lg text-white hover:border-neon-cyan hover-glow-cyan transition-base touch-target"
+        >
+            {% if trigger_icon %}
+                <span>{{ trigger_icon }}</span>
+            {% endif %}
+            <span>{{ trigger_text }}</span>
+            <svg class="w-4 h-4 transition-transform" id="dropdown-arrow-{{ id }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+        
+        {# Dropdown Menu #}
+        <div 
+            id="{{ id }}" 
+            class="dropdown-menu-neon absolute mt-2 min-w-[200px] glass-strong border border-neon-cyan/30 rounded-lg shadow-2xl py-2 z-50 hidden opacity-0 transform translate-y-[-10px] transition-all duration-300"
+            style="{% if position == 'right' %}right: 0;{% elif position == 'left' %}left: 0;{% else %}right: 0;{% endif %}"
+        >
+            {{ caller() if caller }}
+        </div>
+    </div>
+    
+    <style>
+        .dropdown-menu-neon.show {
+            display: block !important;
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+        
+        .dropdown-menu-neon.hidden {
+            display: none !important;
+        }
+    </style>
+    
+    <script>
+        function toggleDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            const arrow = document.getElementById('dropdown-arrow-' + dropdownId);
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.dropdown-menu-neon').forEach(menu => {
+                if (menu.id !== dropdownId) {
+                    menu.classList.remove('show');
+                    menu.classList.add('hidden');
+                    const otherArrow = document.getElementById('dropdown-arrow-' + menu.id);
+                    if (otherArrow) {
+                        otherArrow.style.transform = 'rotate(0deg)';
+                    }
+                }
+            });
+            
+            if (dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+                dropdown.classList.add('hidden');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            } else {
+                dropdown.classList.remove('hidden');
+                dropdown.classList.add('show');
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
+            }
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-neon')) {
+                document.querySelectorAll('.dropdown-menu-neon').forEach(menu => {
+                    menu.classList.remove('show');
+                    menu.classList.add('hidden');
+                    const arrow = document.getElementById('dropdown-arrow-' + menu.id);
+                    if (arrow) arrow.style.transform = 'rotate(0deg)';
+                });
+            }
+        });
+    </script>
+{% endmacro %}
+
+{# Dropdown Item #}
+{% macro neon_dropdown_item(text, href=None, onclick=None, icon=None, danger=False, divider=False) %}
+    {% if divider %}
+        <div class="border-t border-neon-cyan/20 my-2"></div>
+    {% else %}
+        <a 
+            href="{{ href or '#' }}" 
+            onclick="{% if onclick %}{{ onclick }};{% endif %} closeAllDropdowns(); return false;"
+            class="dropdown-item-neon flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-neon-cyan/10 hover:text-neon-cyan transition-base {% if danger %}hover:text-neon-pink hover:bg-neon-pink/10{% endif %}"
+        >
+            {% if icon %}<span class="text-lg">{{ icon }}</span>{% endif %}
+            <span>{{ text }}</span>
+        </a>
+    {% endif %}
+{% endmacro %}
+
+<script>
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dropdown-menu-neon').forEach(menu => {
+            menu.classList.remove('show');
+            menu.classList.add('hidden');
+            const arrow = document.getElementById('dropdown-arrow-' + menu.id);
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
+        });
+    }
+</script>
+
+

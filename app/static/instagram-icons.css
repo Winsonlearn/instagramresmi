@@ -1,0 +1,19 @@
+/* Instagram Icon Styles */
+.ig-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+    vertical-align: middle;
+}
+
+.ig-icon-filled {
+    fill: currentColor;
+}
+
+.ig-icon-outline {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+

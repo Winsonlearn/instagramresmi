@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Post - Instagram Clone{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 30px; max-width: 935px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: #fff; border: 1px solid #dbdbdb; border-radius: 4px;">
+        <div>
+            <img src="{{ url_for('uploaded_file', folder='posts', filename=post.image_url) }}" 
+                 alt="Post by {{ post.user.username }}"
+                 style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                 onerror="this.src='https://via.placeholder.com/614'">
+        </div>
+        
+        <div style="padding: 16px; display: flex; flex-direction: column;">
+            <div class="card-header" style="border-bottom: 1px solid #dbdbdb; padding-bottom: 16px; margin-bottom: 16px;">
+                <a href="{{ url_for('profiles.view', username=post.user.username) }}">
+                    <img src="{{ url_for('uploaded_file', folder='profiles', filename=post.user.profile_picture) if post.user.profile_picture else 'https://via.placeholder.com/32' }}" 
+                         alt="{{ post.user.username }}"
+                         style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;"
+                         onerror="this.src='https://via.placeholder.com/32'">
+                </a>
+                <a href="{{ url_for('profiles.view', username=post.user.username) }}">{{ post.user.username }}</a>
+            </div>
+            
+            <div style="flex: 1; overflow-y: auto; margin-bottom: 16px;">
+                <div style="margin-bottom: 16px;">
+                    <div class="card-actions">
+                        <a href="#" onclick="toggleLike({{ post.id }}); return false;" id="like-btn-{{ post.id }}">
+                            {% if post.is_liked_by(current_user) %}❤️{% else %}🤍{% endif %}
+                        </a>
+                        <a href="#" onclick="toggleBookmark({{ post.id }}); return false;" id="bookmark-btn-{{ post.id }}">
+                            {% if post.is_bookmarked_by(current_user) %}🔖{% else %}📑{% endif %}
+                        </a>
+                        {% if post.user_id == current_user.id %}
+                        <a href="{{ url_for('posts.edit', post_id=post.id) }}" style="font-size: 24px; text-decoration: none;">✏️</a>
+                        <button onclick="confirmDeletePost({{ post.id }})" style="font-size: 24px; padding: 0; border: none; background: none; cursor: pointer;">🗑️</button>
+                        {% endif %}
+                    </div>
+                    <div class="card-likes" id="likes-{{ post.id }}">{{ post.like_count() }} likes</div>
+                    
+                    <div class="card-caption" style="margin-bottom: 8px;">
+                        <strong><a href="{{ url_for('profiles.view', username=post.user.username) }}" style="text-decoration: none; color: #262626;">{{ post.user.username }}</a></strong>
+                        {% if post.caption %} {{ post.caption }}{% endif %}
+                    </div>
+                    <div class="card-time">{{ post.created_at.strftime('%B %d, %Y') }}</div>
+                </div>
+                
+                <div style="margin-top: 16px;">
+                    <h4 style="margin-bottom: 12px; font-size: 14px; color: #8e8e8e;">Comments ({{ comments|length }})</h4>
+                    {% if comments and comments|length > 0 %}
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            {% for comment in comments %}
+                            <div style="margin-bottom: 12px; padding: 8px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <strong><a href="{{ url_for('profiles.view', username=comment.user.username) }}" style="text-decoration: none; color: #262626;">{{ comment.user.username if comment.user else 'Unknown' }}</a></strong>
+                                    <span style="margin-left: 4px;">{{ comment.content }}</span>
+                                    <div style="font-size: 12px; color: #8e8e8e; margin-top: 4px;">
+                                        {{ comment.created_at.strftime('%B %d, %Y') if comment.created_at else '' }}
+                                    </div>
+                                </div>
+                                {% if comment.user_id == current_user.id %}
+                                <div style="display: flex; gap: 8px; margin-left: 12px;">
+                                    <a href="{{ url_for('posts.edit_comment', comment_id=comment.id) }}" style="font-size: 12px; color: #8e8e8e; text-decoration: none;">Edit</a>
+                                    <button onclick="confirmDeleteComment({{ comment.id }})" style="background: none; border: none; color: #ed4956; cursor: pointer; font-size: 12px; padding: 0;">Delete</button>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p style="color: #8e8e8e; font-size: 14px;">No comments yet. Be the first to comment!</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div style="border-top: 1px solid #dbdbdb; padding-top: 16px;">
+                <form method="POST" action="{{ url_for('posts.add_comment', post_id=post.id) }}">
+                    {{ form.hidden_tag() }}
+                    <div style="display: flex; gap: 8px;">
+                        {{ form.content(class="form-control", placeholder="Add a comment...", style="flex: 1;") }}
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleLike(postId) {
+    if (!window.AppUtils) {
+        console.error('AppUtils not loaded');
+        return;
+    }
+    
+    fetch(`/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        const btn = document.getElementById(`like-btn-${postId}`);
+        const likes = document.getElementById(`likes-${postId}`);
+        btn.innerHTML = data.liked ? '❤️' : '🤍';
+        likes.textContent = `${data.like_count} likes`;
+        if (data.liked) {
+            window.AppUtils.Toast.success('Liked!');
+        }
+    })
+    .catch(error => {
+        window.AppUtils.ErrorHandler.handleError(error, 'Failed to update like. Please try again.');
+    });
+}
+
+function toggleBookmark(postId) {
+    if (!window.AppUtils) {
+        console.error('AppUtils not loaded');
+        return;
+    }
+    
+    fetch(`/posts/${postId}/bookmark`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        const btn = document.getElementById(`bookmark-btn-${postId}`);
+        btn.innerHTML = data.bookmarked ? '🔖' : '📑';
+        if (data.bookmarked) {
+            window.AppUtils.Toast.success('Saved to bookmarks!');
+        }
+    })
+    .catch(error => {
+        window.AppUtils.ErrorHandler.handleError(error, 'Failed to update bookmark. Please try again.');
+    });
+}
+
+function confirmDeletePost(postId) {
+    if (!window.AppUtils) {
+        if (confirm('Are you sure you want to delete this post?')) {
+            deletePost(postId);
+        }
+        return;
+    }
+    
+    window.AppUtils.Modal.confirm(
+        'Delete Post',
+        'Are you sure you want to delete this post? This action cannot be undone.',
+        () => deletePost(postId),
+        () => {}
+    );
+}
+
+function deletePost(postId) {
+    if (!window.AppUtils) {
+        window.AppUtils = { LoadingManager: { show: () => {}, hide: () => {} } };
+    }
+    
+    window.AppUtils.LoadingManager.show();
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/posts/${postId}/delete`;
+    
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+        }
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else if (!response.ok) {
+            throw new Error('Failed to delete post');
+        }
+    })
+    .catch(error => {
+        window.AppUtils.ErrorHandler.handleError(error, 'Failed to delete post. Please try again.');
+    })
+    .finally(() => {
+        window.AppUtils.LoadingManager.hide();
+    });
+}
+
+function confirmDeleteComment(commentId) {
+    if (!window.AppUtils) {
+        if (confirm('Delete this comment?')) {
+            deleteComment(commentId);
+        }
+        return;
+    }
+    
+    window.AppUtils.Modal.confirm(
+        'Delete Comment',
+        'Are you sure you want to delete this comment?',
+        () => deleteComment(commentId),
+        () => {}
+    );
+}
+
+function deleteComment(commentId) {
+    if (!window.AppUtils) {
+        window.AppUtils = { LoadingManager: { show: () => {}, hide: () => {} } };
+    }
+    
+    window.AppUtils.LoadingManager.show();
+    
+    fetch(`/posts/comment/${commentId}/delete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+        }
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else if (!response.ok) {
+            throw new Error('Failed to delete comment');
+        }
+    })
+    .catch(error => {
+        window.AppUtils.ErrorHandler.handleError(error, 'Failed to delete comment. Please try again.');
+    })
+    .finally(() => {
+        window.AppUtils.LoadingManager.hide();
+    });
+}
+</script>
+{% endblock %}
+

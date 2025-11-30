@@ -1,0 +1,135 @@
+{# Loading Skeletons Component - Neon Theme #}
+{# Usage: {% include 'components/layout/skeletons.html' %} #}
+
+{# Post Skeleton #}
+{% macro post_skeleton() %}
+    <div class="skeleton-post glass border border-neon-cyan/20 rounded-xl p-4 mb-6 animate-shimmer">
+        {# Header #}
+        <div class="flex items-center gap-3 mb-4">
+            <div class="skeleton skeleton-circle w-10 h-10"></div>
+            <div class="flex-1">
+                <div class="skeleton skeleton-text w-24"></div>
+            </div>
+        </div>
+        
+        {# Image #}
+        <div class="skeleton skeleton-image w-full h-96 mb-4"></div>
+        
+        {# Actions #}
+        <div class="flex gap-4 mb-3">
+            <div class="skeleton skeleton-text w-8 h-8 rounded"></div>
+            <div class="skeleton skeleton-text w-8 h-8 rounded"></div>
+            <div class="skeleton skeleton-text w-8 h-8 rounded"></div>
+        </div>
+        
+        {# Content #}
+        <div class="skeleton skeleton-text w-32 mb-2"></div>
+        <div class="skeleton skeleton-text w-full mb-1"></div>
+        <div class="skeleton skeleton-text w-3/4"></div>
+    </div>
+{% endmacro %}
+
+{# Feed Skeleton #}
+{% macro feed_skeleton(count=3) %}
+    <div class="skeleton-feed">
+        {% for i in range(count) %}
+            {{ post_skeleton() }}
+        {% endfor %}
+    </div>
+{% endmacro %}
+
+{# Profile Header Skeleton #}
+{% macro profile_header_skeleton() %}
+    <div class="skeleton-profile-header glass border border-neon-cyan/20 rounded-xl p-6 mb-6 animate-shimmer">
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+            <div class="skeleton skeleton-circle w-24 h-24"></div>
+            <div class="flex-1 w-full md:w-auto text-center md:text-left">
+                <div class="skeleton skeleton-title mb-4"></div>
+                <div class="flex gap-6 justify-center md:justify-start mb-4">
+                    <div class="text-center">
+                        <div class="skeleton skeleton-text w-12 h-6 mb-1"></div>
+                        <div class="skeleton skeleton-text w-16"></div>
+                    </div>
+                    <div class="text-center">
+                        <div class="skeleton skeleton-text w-12 h-6 mb-1"></div>
+                        <div class="skeleton skeleton-text w-16"></div>
+                    </div>
+                    <div class="text-center">
+                        <div class="skeleton skeleton-text w-12 h-6 mb-1"></div>
+                        <div class="skeleton skeleton-text w-16"></div>
+                    </div>
+                </div>
+                <div class="skeleton skeleton-text w-48 mb-2"></div>
+                <div class="skeleton skeleton-text w-32"></div>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
+{# Card Skeleton #}
+{% macro card_skeleton() %}
+    <div class="skeleton-card glass border border-neon-cyan/20 rounded-xl p-6 animate-shimmer">
+        <div class="skeleton skeleton-title mb-4"></div>
+        <div class="skeleton skeleton-text w-full mb-2"></div>
+        <div class="skeleton skeleton-text w-full mb-2"></div>
+        <div class="skeleton skeleton-text w-3/4"></div>
+    </div>
+{% endmacro %}
+
+{# Avatar Skeleton #}
+{% macro avatar_skeleton(size='md') %}
+    {% set sizes = {
+        'xs': 'w-6 h-6',
+        'sm': 'w-8 h-8',
+        'md': 'w-10 h-10',
+        'lg': 'w-16 h-16',
+        'xl': 'w-24 h-24'
+    } %}
+    <div class="skeleton skeleton-circle {{ sizes.get(size, 'w-10 h-10') }}"></div>
+{% endmacro %}
+
+{# List Item Skeleton #}
+{% macro list_item_skeleton() %}
+    <div class="skeleton-list-item flex items-center gap-4 p-4 glass border border-neon-cyan/20 rounded-lg mb-3 animate-shimmer">
+        <div class="skeleton skeleton-circle w-12 h-12"></div>
+        <div class="flex-1">
+            <div class="skeleton skeleton-text w-32 mb-2"></div>
+            <div class="skeleton skeleton-text w-48"></div>
+        </div>
+    </div>
+{% endmacro %}
+
+{# Grid Skeleton (for posts grid) #}
+{% macro grid_skeleton(columns=3, rows=3) %}
+    <div class="skeleton-grid grid grid-cols-{{ columns }} gap-4">
+        {% for i in range(columns * rows) %}
+            <div class="skeleton skeleton-image aspect-square rounded-lg"></div>
+        {% endfor %}
+    </div>
+{% endmacro %}
+
+{# Notification Skeleton #}
+{% macro notification_skeleton() %}
+    <div class="skeleton-notification flex items-center gap-4 p-4 glass border border-neon-cyan/20 rounded-lg mb-3 animate-shimmer">
+        <div class="skeleton skeleton-circle w-12 h-12"></div>
+        <div class="flex-1">
+            <div class="skeleton skeleton-text w-3/4 mb-2"></div>
+            <div class="skeleton skeleton-text w-1/2"></div>
+        </div>
+        <div class="skeleton skeleton-text w-16 h-16 rounded"></div>
+    </div>
+{% endmacro %}
+
+{# Comment Skeleton #}
+{% macro comment_skeleton() %}
+    <div class="skeleton-comment flex items-start gap-3 p-4 glass border border-neon-cyan/20 rounded-lg mb-3 animate-shimmer">
+        <div class="skeleton skeleton-circle w-10 h-10"></div>
+        <div class="flex-1">
+            <div class="skeleton skeleton-text w-24 mb-2"></div>
+            <div class="skeleton skeleton-text w-full mb-1"></div>
+            <div class="skeleton skeleton-text w-2/3"></div>
+        </div>
+    </div>
+{% endmacro %}
+
+

@@ -1,0 +1,84 @@
+{# Modal Component - Neon Theme #}
+{# Usage: {% include 'components/common/modal.html' %} #}
+
+{% macro neon_modal(id, title='', size='md', class='') %}
+    <div id="{{ id }}" class="modal-neon fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        {# Backdrop #}
+        <div class="modal-backdrop absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onclick="closeModal('{{ id }}')"></div>
+        
+        {# Modal Content #}
+        <div class="modal-content-neon glass-strong border-2 border-neon-cyan rounded-2xl shadow-2xl relative z-10 animate-slide-in-up {% if size == 'sm' %}w-full max-w-sm{% elif size == 'md' %}w-full max-w-md{% elif size == 'lg' %}w-full max-w-lg{% elif size == 'xl' %}w-full max-w-xl{% elif size == '2xl' %}w-full max-w-2xl{% else %}w-full max-w-md{% endif %} {{ class }}">
+            {# Header #}
+            {% if title %}
+                <div class="modal-header-neon flex items-center justify-between px-6 py-4 border-b border-neon-cyan/30">
+                    <h2 class="text-xl font-bold text-gradient-cyan-pink">{{ title }}</h2>
+                    <button onclick="closeModal('{{ id }}')" class="text-text-secondary hover:text-neon-pink hover-glow-pink transition-base touch-target">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            {% endif %}
+            
+            {# Body #}
+            <div class="modal-body-neon px-6 py-4 max-h-[70vh] overflow-y-auto">
+                {{ caller() if caller }}
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .modal-neon.show {
+            display: flex !important;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes modalSlideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+    
+    <script>
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('show');
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }, 300);
+            }
+        }
+        
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const openModals = document.querySelectorAll('.modal-neon.show');
+                openModals.forEach(modal => {
+                    closeModal(modal.id);
+                });
+            }
+        });
+    </script>
+{% endmacro %}
+

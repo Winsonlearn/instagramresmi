@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile_user.username }} - Instagram Clone{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 30px; max-width: 935px;">
+    <div class="card" style="padding: 32px;">
+        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 32px; align-items: center; margin-bottom: 44px;">
+            <div>
+                <img src="{% if profile_user.profile_picture and profile_user.profile_picture != 'default_profile.png' %}{{ url_for('uploaded_file', folder='profiles', filename=profile_user.profile_picture) }}{% else %}https://via.placeholder.com/150{% endif %}" 
+                     alt="{{ profile_user.username }}"
+                     style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;"
+                     onerror="this.src='https://via.placeholder.com/150'">
+            </div>
+            
+            <div>
+                <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
+                    <h1 style="font-size: 28px; font-weight: 300;">{{ profile_user.username }}</h1>
+                    {% if not is_own_profile %}
+                    <button onclick="toggleFollow('{{ profile_user.username }}')" 
+                            class="btn {% if is_following %}btn-secondary{% else %}btn-primary{% endif %}"
+                            id="follow-btn">
+                        {% if is_following %}Unfollow{% else %}Follow{% endif %}
+                    </button>
+                    {% else %}
+                    <a href="{{ url_for('profiles.edit') }}" class="btn btn-secondary">Edit Profile</a>
+                    {% endif %}
+                </div>
+                
+                <div style="display: flex; gap: 40px; margin-bottom: 20px;">
+                    <div><strong>{{ posts|length }}</strong> posts</div>
+                    <div><strong id="followers-count">{{ followers_count }}</strong> followers</div>
+                    <div><strong>{{ following_count }}</strong> following</div>
+                </div>
+                
+                <div>
+                    <strong>{{ profile_user.fullname }}</strong>
+                    {% if profile_user.bio %}
+                    <p style="margin-top: 8px;">{{ profile_user.bio }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="border-top: 1px solid #dbdbdb; padding-top: 24px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;">
+            {% for post in posts %}
+            <a href="{{ url_for('posts.detail', post_id=post.id) }}" style="aspect-ratio: 1; overflow: hidden; position: relative;">
+                     <img src="{{ url_for('uploaded_file', folder='posts', filename=post.image_url) }}"
+                     alt="Post by {{ profile_user.username }}"
+                     style="width: 100%; height: 100%; object-fit: cover;"
+                     onerror="this.src='https://via.placeholder.com/300'">
+            </a>
+            {% endfor %}
+        </div>
+        
+        {% if not posts %}
+        <div style="text-align: center; padding: 60px 20px;">
+            <p style="color: #8e8e8e; font-size: 24px; margin-bottom: 16px;">No posts yet</p>
+            {% if is_own_profile %}
+            <a href="{{ url_for('posts.create') }}" class="btn btn-primary">Share your first photo</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleFollow(username) {
+    fetch(`/profile/${username}/follow`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const btn = document.getElementById('follow-btn');
+        const followers = document.getElementById('followers-count');
+        
+        btn.textContent = data.is_following ? 'Unfollow' : 'Follow';
+        btn.className = data.is_following ? 'btn btn-secondary' : 'btn btn-primary';
+        followers.textContent = data.followers_count;
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}
+

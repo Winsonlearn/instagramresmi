@@ -1,0 +1,382 @@
+{% extends "base.html" %} {% block title %}Messages - Instagram Clone{% endblock
+%} {% block extra_css %}
+<style>
+  .messages-container {
+    max-width: 935px;
+    margin: 0 auto;
+    background: var(--bg-primary);
+    min-height: calc(100vh - 60px);
+  }
+
+  .messages-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .messages-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .message-item {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .message-item:hover {
+    background: var(--bg-secondary);
+  }
+
+  .message-item.unread {
+    background: rgba(var(--neon-cyan-rgb), 0.1);
+  }
+
+  .message-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--neon-cyan);
+    flex-shrink: 0;
+  }
+
+  .message-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .message-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+  }
+
+  .message-username {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .message-time {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .message-preview {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .message-preview.unread {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .unread-badge {
+    background: var(--neon-cyan);
+    color: var(--bg-primary);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+  }
+
+  .new-message-btn {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    transition: transform 0.2s;
+  }
+
+  .new-message-btn:hover {
+    transform: scale(1.1);
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="messages-container">
+  <div class="messages-header">
+    <h1 style="margin: 0; font-size: 1.5rem">Messages</h1>
+    <button
+      class="new-message-btn"
+      onclick="openNewMessageModal()"
+      title="New Message"
+    >
+      ✉️
+    </button>
+  </div>
+
+  {% if conversations %}
+  <ul class="messages-list">
+    {% for conv in conversations %}
+    <a
+      href="{{ url_for('messages.view_conversation', conversation_id=conv.id) }}"
+      class="message-item {% if conv.unread_count > 0 %}unread{% endif %}"
+    >
+      <img
+        src="{{ url_for('uploaded_file', folder='profiles', filename=conv.other_user.profile_picture) if conv.other_user.profile_picture else 'https://via.placeholder.com/56' }}"
+        alt="{{ conv.other_user.username }}"
+        class="message-avatar"
+        onerror="this.src='https://via.placeholder.com/56'"
+      />
+      <div class="message-content">
+        <div class="message-header">
+          <span class="message-username">
+            {{ conv.other_user.username }} {% if conv.other_user.is_verified
+            %}✓{% endif %}
+          </span>
+          {% if conv.last_message %}
+          <span
+            class="message-time"
+            data-timestamp="{{ conv.last_message.created_at }}"
+          ></span>
+          {% endif %}
+        </div>
+        <div
+          class="message-preview {% if conv.unread_count > 0 %}unread{% endif %}"
+        >
+          {% if conv.last_message %} {% if conv.last_message.type == 'image' %}
+          📷 Image {% elif conv.last_message.type == 'video' %} 🎥 Video {% elif
+          conv.last_message.type == 'voice' %} 🎤 Voice message {% else %} {{
+          conv.last_message.content[:50] }}{% if
+          conv.last_message.content|length > 50 %}...{% endif %} {% endif %} {%
+          else %} No messages yet {% endif %}
+        </div>
+      </div>
+      {% if conv.unread_count > 0 %}
+      <div class="unread-badge">{{ conv.unread_count }}</div>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-state">
+    <p style="font-size: 1.25rem; margin-bottom: 0.5rem">No messages yet</p>
+    <p>Start a conversation with someone!</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- New Message Modal -->
+<div
+  id="newMessageModal"
+  style="
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  "
+>
+  <div
+    style="
+      background: var(--bg-primary);
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    "
+  >
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      "
+    >
+      <h2 style="margin: 0">New Message</h2>
+      <button
+        onclick="closeNewMessageModal()"
+        style="
+          background: none;
+          border: none;
+          color: var(--text-primary);
+          font-size: 1.5rem;
+          cursor: pointer;
+        "
+      >
+        &times;
+      </button>
+    </div>
+    <input
+      type="text"
+      id="searchUserInput"
+      placeholder="Search users..."
+      style="
+        width: 100%;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+      "
+    />
+    <div id="userSearchResults"></div>
+  </div>
+</div>
+
+<script>
+  function openNewMessageModal() {
+    document.getElementById("newMessageModal").style.display = "flex";
+    document.getElementById("searchUserInput").focus();
+  }
+
+  function closeNewMessageModal() {
+    document.getElementById("newMessageModal").style.display = "none";
+    document.getElementById("searchUserInput").value = "";
+    document.getElementById("userSearchResults").innerHTML = "";
+  }
+
+  // Search users
+  document
+    .getElementById("searchUserInput")
+    ?.addEventListener("input", async function (e) {
+      const query = e.target.value.trim();
+      if (query.length < 2) {
+        document.getElementById("userSearchResults").innerHTML = "";
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/users/search?q=${encodeURIComponent(query)}`
+        );
+        const users = await response.json();
+
+        const resultsDiv = document.getElementById("userSearchResults");
+        if (users.length === 0) {
+          resultsDiv.innerHTML =
+            '<p style="text-align: center; color: var(--text-secondary); padding: 1rem;">No users found</p>';
+          return;
+        }
+
+        resultsDiv.innerHTML = users
+          .map(
+            (user) => `
+            <div onclick="startConversation(${
+              user.id
+            })" style="padding: 0.75rem; cursor: pointer; border-radius: 8px; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 1rem; transition: background 0.2s;" 
+                 onmouseover="this.style.background='var(--bg-secondary)'" 
+                 onmouseout="this.style.background='transparent'">
+                <img src="${
+                  user.profile_picture
+                    ? `/uploads/profiles/${user.profile_picture}`
+                    : "https://via.placeholder.com/40"
+                }" 
+                     style="width: 40px; height: 40px; border-radius: 50%;" 
+                     onerror="this.src='https://via.placeholder.com/40'">
+                <div>
+                    <div style="font-weight: 600;">${user.username} ${
+              user.is_verified ? "✓" : ""
+            }</div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">${
+                      user.fullname
+                    }</div>
+                </div>
+            </div>
+        `
+          )
+          .join("");
+      } catch (error) {
+        console.error("Error searching users:", error);
+      }
+    });
+
+  async function startConversation(userId) {
+    try {
+      const response = await fetch(`/messages/api/start/${userId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCSRFToken(),
+        },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        window.location.href = `/messages/${data.conversation_id}`;
+      }
+    } catch (error) {
+      console.error("Error starting conversation:", error);
+      alert("Failed to start conversation");
+    }
+  }
+
+  function getCSRFToken() {
+    const token = document.querySelector('meta[name="csrf-token"]');
+    return token ? token.content : "";
+  }
+
+  // Format timestamps
+  document.querySelectorAll(".message-time[data-timestamp]").forEach((el) => {
+    const timestamp = el.getAttribute("data-timestamp");
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+
+    if (diff < 60000) {
+      el.textContent = "just now";
+    } else if (diff < 3600000) {
+      el.textContent = Math.floor(diff / 60000) + "m";
+    } else if (diff < 86400000) {
+      el.textContent = Math.floor(diff / 3600000) + "h";
+    } else {
+      el.textContent = date.toLocaleDateString();
+    }
+  });
+
+  // Close modal on outside click
+  document
+    .getElementById("newMessageModal")
+    ?.addEventListener("click", function (e) {
+      if (e.target === this) {
+        closeNewMessageModal();
+      }
+    });
+</script>
+{% endblock %}
+

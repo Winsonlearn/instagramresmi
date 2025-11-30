@@ -1,0 +1,61 @@
+{# Button Component - Neon Theme #}
+{# Usage: {% include 'components/common/button.html' with {variant: 'primary', text: 'Click Me', href: '/link', onclick: 'func()'} %} #}
+
+{% macro neon_button(variant='primary', text='Button', href=None, onclick=None, type='button', disabled=False, icon=None, size='md', class='', id='') %}
+    {% set base_classes = 'btn-neon inline-flex items-center justify-center font-semibold uppercase tracking-wider transition-base relative overflow-hidden touch-target' %}
+    
+    {% if size == 'sm' %}
+        {% set size_classes = 'px-4 py-2 text-xs' %}
+    {% elif size == 'lg' %}
+        {% set size_classes = 'px-8 py-4 text-base' %}
+    {% else %}
+        {% set size_classes = 'px-6 py-3 text-sm' %}
+    {% endif %}
+    
+    {% if variant == 'primary' %}
+        {% set variant_classes = 'bg-gradient-to-r from-neon-cyan to-neon-purple text-white border border-neon-cyan glow-cyan hover:glow-pink hover:border-neon-pink hover-lift' %}
+    {% elif variant == 'secondary' %}
+        {% set variant_classes = 'glass-strong text-white border border-neon-cyan hover:border-neon-blue hover-glow-cyan' %}
+    {% elif variant == 'ghost' %}
+        {% set variant_classes = 'bg-transparent text-neon-cyan border border-transparent hover:border-neon-cyan hover-glow-cyan' %}
+    {% elif variant == 'danger' %}
+        {% set variant_classes = 'bg-gradient-to-r from-neon-pink to-red-600 text-white border border-neon-pink glow-pink hover:glow-pink animate-pulse-glow-pink' %}
+    {% else %}
+        {% set variant_classes = 'glass text-white border border-neon-cyan hover-glow-cyan' %}
+    {% endif %}
+    
+    {% set all_classes = base_classes ~ ' ' ~ size_classes ~ ' ' ~ variant_classes ~ ' ' ~ class %}
+    {% if disabled %}
+        {% set all_classes = all_classes ~ ' opacity-50 cursor-not-allowed' %}
+    {% endif %}
+    
+    {% if href %}
+        <a href="{{ href }}" class="{{ all_classes }}" {% if id %}id="{{ id }}"{% endif %} {% if onclick %}onclick="{{ onclick }}; return false;"{% endif %}>
+            {% if icon %}<span class="mr-2">{{ icon }}</span>{% endif %}
+            {{ text }}
+        </a>
+    {% else %}
+        <button type="{{ type }}" class="{{ all_classes }}" {% if id %}id="{{ id }}"{% endif %} {% if onclick %}onclick="{{ onclick }}"{% endif %} {% if disabled %}disabled{% endif %}>
+            {% if icon %}<span class="mr-2">{{ icon }}</span>{% endif %}
+            {{ text }}
+        </button>
+    {% endif %}
+    
+    <style>
+        .btn-neon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        .btn-neon:hover::before {
+            left: 100%;
+        }
+    </style>
+{% endmacro %}
+
+

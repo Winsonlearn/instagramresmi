@@ -1,0 +1,734 @@
+{% extends "base.html" %}
+
+{% block title %}Chat with {{ other_user.username }} - Instagram Clone{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.socket.io/4.5.4/socket.io.min.css">
+<style>
+    .chat-container {
+        max-width: 935px;
+        margin: 0 auto;
+        height: calc(100vh - 60px);
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-primary);
+    }
+    
+    .chat-header {
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .chat-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--neon-cyan);
+    }
+    
+    .chat-info {
+        flex: 1;
+    }
+    
+    .chat-username {
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .online-status {
+        font-size: 0.75rem;
+        color: var(--neon-cyan);
+    }
+    
+    .offline-status {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+    
+    .messages-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .message {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        max-width: 70%;
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .message.sent {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+        margin-left: auto;
+    }
+    
+    .message-content {
+        background: var(--bg-secondary);
+        padding: 0.75rem 1rem;
+        border-radius: 18px;
+        word-wrap: break-word;
+        position: relative;
+    }
+    
+    .message.sent .message-content {
+        background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+        color: white;
+    }
+    
+    .message.received .message-content {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .message-media {
+        max-width: 100%;
+        border-radius: 12px;
+        margin-top: 0.5rem;
+    }
+    
+    .message-reply {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 0.5rem;
+        border-left: 3px solid var(--neon-cyan);
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .message-time {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .message-reactions {
+        display: flex;
+        gap: 0.25rem;
+        margin-top: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .reaction {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .reaction:hover {
+        transform: scale(1.1);
+    }
+    
+    .reaction.has-reacted {
+        background: var(--neon-cyan);
+        border-color: var(--neon-cyan);
+    }
+    
+    .typing-indicator {
+        display: none;
+        padding: 0.5rem 1rem;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        font-style: italic;
+    }
+    
+    .typing-indicator.active {
+        display: block;
+    }
+    
+    .input-area {
+        border-top: 1px solid var(--border-color);
+        padding: 1rem;
+        background: var(--bg-secondary);
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end;
+    }
+    
+    .input-wrapper {
+        flex: 1;
+        position: relative;
+    }
+    
+    .message-input {
+        width: 100%;
+        padding: 0.75rem 3rem 0.75rem 1rem;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        color: var(--text-primary);
+        resize: none;
+        min-height: 44px;
+        max-height: 120px;
+    }
+    
+    .input-actions {
+        position: absolute;
+        right: 0.5rem;
+        bottom: 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .input-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.25rem;
+        padding: 0.25rem;
+        color: var(--text-primary);
+        transition: transform 0.2s;
+    }
+    
+    .input-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .send-btn {
+        background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        color: white;
+        cursor: pointer;
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    
+    .send-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .emoji-picker {
+        position: absolute;
+        bottom: 100%;
+        right: 0;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 0.5rem;
+        display: none;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 0.5rem;
+        max-width: 300px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .emoji-picker.active {
+        display: grid;
+    }
+    
+    .emoji-option {
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.25rem;
+        text-align: center;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+    
+    .emoji-option:hover {
+        background: var(--bg-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <a href="{{ url_for('profiles.view', username=other_user.username) }}">
+            <img src="{{ url_for('uploaded_file', folder='profiles', filename=other_user.profile_picture) if other_user.profile_picture else 'https://via.placeholder.com/40' }}"
+                 alt="{{ other_user.username }}"
+                 class="chat-avatar"
+                 onerror="this.src='https://via.placeholder.com/40'">
+        </a>
+        <div class="chat-info">
+            <div class="chat-username">
+                <a href="{{ url_for('profiles.view', username=other_user.username) }}" style="text-decoration: none; color: inherit;">
+                    {{ other_user.username }}
+                    {% if other_user.is_verified %}✓{% endif %}
+                </a>
+            </div>
+            <div id="userStatus" class="offline-status">offline</div>
+        </div>
+    </div>
+    
+    <div class="messages-area" id="messagesArea">
+        {% for msg in messages %}
+        <div class="message {% if msg.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-message-id="{{ msg.id }}">
+            {% if msg.sender_id != current_user.id %}
+            <img src="{{ url_for('uploaded_file', folder='profiles', filename=msg.sender.profile_picture) if msg.sender.profile_picture else 'https://via.placeholder.com/32' }}"
+                 style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;"
+                 onerror="this.src='https://via.placeholder.com/32'">
+            {% endif %}
+            <div class="message-content">
+                {% if msg.reply_to %}
+                <div class="message-reply">
+                    <strong>{{ msg.reply_to.sender_username }}</strong><br>
+                    {{ msg.reply_to.content }}
+                </div>
+                {% endif %}
+                
+                {% if msg.media_url %}
+                {% if msg.type == 'image' %}
+                <img src="{{ url_for('uploaded_file', folder='messages', filename=msg.media_url.split('/')[-1]) }}" class="message-media" alt="Image">
+                {% elif msg.type == 'video' %}
+                <video src="{{ url_for('uploaded_file', folder='messages', filename=msg.media_url.split('/')[-1]) }}" class="message-media" controls></video>
+                {% elif msg.type == 'voice' %}
+                <audio src="{{ url_for('uploaded_file', folder='messages', filename=msg.media_url.split('/')[-1]) }}" controls style="width: 100%;"></audio>
+                {% endif %}
+                {% endif %}
+                
+                {% if msg.content %}
+                <div>{{ msg.content }}</div>
+                {% endif %}
+                
+                {% if msg.reactions|length > 0 %}
+                <div class="message-reactions">
+                    {% for reaction in msg.reactions %}
+                    <span class="reaction {% if reaction.user_id == current_user.id %}has-reacted{% endif %}" 
+                          onclick="toggleReaction({{ msg.id }}, '{{ reaction.emoji }}')">
+                        {{ reaction.emoji }} {{ reaction.username }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="message-time">
+                    <span data-timestamp="{{ msg.created_at }}"></span>
+                    {% if msg.sender_id == current_user.id %}
+                        {% if msg.read %}
+                        <span style="color: var(--neon-cyan);">✓✓</span>
+                        {% else %}
+                        <span>✓</span>
+                        {% endif %}
+                    {% endif %}
+                    <button onclick="showMessageMenu({{ msg.id }})" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; margin-left: auto;">⋯</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div id="typingIndicator" class="typing-indicator">
+            <span id="typingUser"></span> is typing...
+        </div>
+    </div>
+    
+    <div class="input-area">
+        <div class="input-wrapper">
+            <textarea id="messageInput" 
+                      class="message-input" 
+                      placeholder="Message..."
+                      rows="1"
+                      onkeydown="handleKeyDown(event)"
+                      oninput="handleInputChange()"></textarea>
+            <div class="input-actions">
+                <button class="input-btn" onclick="toggleEmojiPicker()" title="Emoji">😊</button>
+                <input type="file" id="mediaInput" accept="image/*,video/*,audio/*" style="display: none;" onchange="handleMediaSelect(event)">
+                <button class="input-btn" onclick="document.getElementById('mediaInput').click()" title="Attach Media">📎</button>
+            </div>
+            <div id="emojiPicker" class="emoji-picker">
+                <!-- Emojis will be populated by JavaScript -->
+            </div>
+        </div>
+        <button id="sendBtn" class="send-btn" onclick="sendMessage()" disabled>➤</button>
+    </div>
+</div>
+
+<!-- Message Menu Modal -->
+<div id="messageMenu" style="display: none; position: fixed; bottom: 100px; right: 20px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 0.5rem; z-index: 1000;">
+    <button onclick="replyToMessage()" style="display: block; width: 100%; padding: 0.75rem; background: none; border: none; color: var(--text-primary); text-align: left; cursor: pointer; border-radius: 8px;">Reply</button>
+    <button onclick="reactToMessage()" style="display: block; width: 100%; padding: 0.75rem; background: none; border: none; color: var(--text-primary); text-align: left; cursor: pointer; border-radius: 8px;">React</button>
+    <button id="deleteMessageBtn" onclick="deleteMessage()" style="display: block; width: 100%; padding: 0.75rem; background: none; border: none; color: var(--neon-pink); text-align: left; cursor: pointer; border-radius: 8px;">Delete</button>
+</div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+const conversationId = {{ conversation.id }};
+const currentUserId = {{ current_user.id }};
+let socket;
+let replyToId = null;
+let selectedMessageId = null;
+let typingTimeout;
+
+// Initialize Socket.IO
+function initSocket() {
+    socket = io();
+    
+    socket.on('connect', () => {
+        console.log('Connected to server');
+        socket.emit('join.conversation', { conversation_id: conversationId });
+    });
+    
+    socket.on('message.new', (data) => {
+        addMessageToUI(data.message);
+        scrollToBottom();
+    });
+    
+    socket.on('message.deleted', (data) => {
+        const messageEl = document.querySelector(`[data-message-id="${data.message_id}"]`);
+        if (messageEl) {
+            messageEl.remove();
+        }
+    });
+    
+    socket.on('message.reaction', (data) => {
+        updateMessageReactions(data.message_id, data.emoji, data.action, data.username);
+    });
+    
+    socket.on('user.typing', (data) => {
+        if (data.user_id !== currentUserId) {
+            showTypingIndicator(data.username, data.typing);
+        }
+    });
+    
+    socket.on('user.online', (data) => {
+        if (data.user_id === {{ other_user.id }}) {
+            updateUserStatus(data.online);
+        }
+    });
+    
+    socket.on('message.read', (data) => {
+        updateReadReceipt(data.message_id);
+    });
+}
+
+function addMessageToUI(message) {
+    const messagesArea = document.getElementById('messagesArea');
+    const isSent = message.sender_id === currentUserId;
+    
+    const messageEl = document.createElement('div');
+    messageEl.className = `message ${isSent ? 'sent' : 'received'}`;
+    messageEl.setAttribute('data-message-id', message.id);
+    
+    let content = '';
+    if (message.media_url) {
+        const mediaType = message.type === 'image' ? 'img' : message.type === 'video' ? 'video' : 'audio';
+        if (mediaType === 'img') {
+            content += `<img src="${message.media_url}" class="message-media" alt="Image">`;
+        } else if (mediaType === 'video') {
+            content += `<video src="${message.media_url}" class="message-media" controls></video>`;
+        } else {
+            content += `<audio src="${message.media_url}" controls style="width: 100%;"></audio>`;
+        }
+    }
+    if (message.content) {
+        content += `<div>${message.content}</div>`;
+    }
+    
+    messageEl.innerHTML = `
+        ${!isSent ? `<img src="${message.sender.profile_picture || 'https://via.placeholder.com/32'}" style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;">` : ''}
+        <div class="message-content">
+            ${content}
+            <div class="message-time">
+                <span data-timestamp="${message.created_at}"></span>
+                ${isSent ? '<span>✓</span>' : ''}
+                <button onclick="showMessageMenu(${message.id})" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; margin-left: auto;">⋯</button>
+            </div>
+        </div>
+    `;
+    
+    messagesArea.insertBefore(messageEl, document.getElementById('typingIndicator'));
+    formatTimestamps();
+}
+
+function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const content = input.value.trim();
+    const mediaFile = document.getElementById('mediaInput').files[0];
+    
+    if (!content && !mediaFile) return;
+    
+    const formData = new FormData();
+    formData.append('content', content);
+    if (replyToId) {
+        formData.append('reply_to_id', replyToId);
+    }
+    if (mediaFile) {
+        formData.append('file', mediaFile);
+    }
+    
+    fetch(`/messages/api/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            document.getElementById('mediaInput').value = '';
+            replyToId = null;
+            updateSendButton();
+        }
+    })
+    .catch(error => {
+        console.error('Error sending message:', error);
+        alert('Failed to send message');
+    });
+    
+    socket.emit('typing.stop', { conversation_id: conversationId });
+}
+
+function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+    }
+}
+
+function handleInputChange() {
+    updateSendButton();
+    
+    clearTimeout(typingTimeout);
+    socket.emit('typing.start', { conversation_id: conversationId });
+    
+    typingTimeout = setTimeout(() => {
+        socket.emit('typing.stop', { conversation_id: conversationId });
+    }, 1000);
+}
+
+function updateSendButton() {
+    const input = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = !input.value.trim() && !document.getElementById('mediaInput').files[0];
+}
+
+function showTypingIndicator(username, isTyping) {
+    const indicator = document.getElementById('typingIndicator');
+    const userSpan = document.getElementById('typingUser');
+    
+    if (isTyping) {
+        userSpan.textContent = username;
+        indicator.classList.add('active');
+    } else {
+        indicator.classList.remove('active');
+    }
+}
+
+function updateUserStatus(isOnline) {
+    const statusEl = document.getElementById('userStatus');
+    if (isOnline) {
+        statusEl.textContent = 'online';
+        statusEl.className = 'online-status';
+    } else {
+        statusEl.textContent = 'offline';
+        statusEl.className = 'offline-status';
+    }
+}
+
+function toggleReaction(messageId, emoji) {
+    fetch(`/messages/api/messages/${messageId}/react`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({ emoji })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Reaction will be updated via WebSocket
+    })
+    .catch(error => console.error('Error reacting:', error));
+}
+
+function deleteMessage() {
+    if (!selectedMessageId) return;
+    
+    if (confirm('Delete this message?')) {
+        fetch(`/messages/api/messages/${selectedMessageId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const messageEl = document.querySelector(`[data-message-id="${selectedMessageId}"]`);
+                if (messageEl) messageEl.remove();
+            }
+        })
+        .catch(error => console.error('Error deleting:', error));
+    }
+    
+    hideMessageMenu();
+}
+
+function showMessageMenu(messageId) {
+    selectedMessageId = messageId;
+    const menu = document.getElementById('messageMenu');
+    const message = document.querySelector(`[data-message-id="${messageId}"]`);
+    
+    // Only show delete for own messages
+    const deleteBtn = document.getElementById('deleteMessageBtn');
+    const messageSenderId = message.querySelector('.message-content')?.dataset?.senderId;
+    deleteBtn.style.display = messageSenderId == currentUserId ? 'block' : 'none';
+    
+    menu.style.display = 'block';
+}
+
+function hideMessageMenu() {
+    document.getElementById('messageMenu').style.display = 'none';
+    selectedMessageId = null;
+}
+
+function replyToMessage() {
+    replyToId = selectedMessageId;
+    document.getElementById('messageInput').focus();
+    hideMessageMenu();
+}
+
+function handleMediaSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        updateSendButton();
+    }
+}
+
+function toggleEmojiPicker() {
+    const picker = document.getElementById('emojiPicker');
+    picker.classList.toggle('active');
+    
+    if (picker.classList.contains('active') && !picker.dataset.populated) {
+        const emojis = ['😀', '😂', '❤️', '👍', '👎', '🎉', '🔥', '💯'];
+        picker.innerHTML = emojis.map(emoji => 
+            `<div class="emoji-option" onclick="selectEmoji('${emoji}')">${emoji}</div>`
+        ).join('');
+        picker.dataset.populated = 'true';
+    }
+}
+
+function selectEmoji(emoji) {
+    document.getElementById('messageInput').value += emoji;
+    document.getElementById('emojiPicker').classList.remove('active');
+    updateSendButton();
+}
+
+function formatTimestamps() {
+    document.querySelectorAll('.message-time span[data-timestamp]').forEach(el => {
+        const timestamp = el.getAttribute('data-timestamp');
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now - date;
+        
+        if (diff < 60000) {
+            el.textContent = 'just now';
+        } else if (diff < 3600000) {
+            el.textContent = Math.floor(diff / 60000) + 'm';
+        } else if (diff < 86400000) {
+            el.textContent = Math.floor(diff / 3600000) + 'h';
+        } else {
+            el.textContent = date.toLocaleDateString();
+        }
+    });
+}
+
+function updateMessageReactions(messageId, emoji, action, username) {
+    const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageEl) return;
+    
+    let reactionsDiv = messageEl.querySelector('.message-reactions');
+    if (!reactionsDiv) {
+        reactionsDiv = document.createElement('div');
+        reactionsDiv.className = 'message-reactions';
+        messageEl.querySelector('.message-content').appendChild(reactionsDiv);
+    }
+    
+    if (action === 'added') {
+        const reactionEl = document.createElement('span');
+        reactionEl.className = 'reaction';
+        reactionEl.textContent = `${emoji} ${username}`;
+        reactionEl.onclick = () => toggleReaction(messageId, emoji);
+        reactionsDiv.appendChild(reactionEl);
+    } else {
+        const reactions = reactionsDiv.querySelectorAll('.reaction');
+        reactions.forEach(el => {
+            if (el.textContent.includes(emoji) && el.textContent.includes(username)) {
+                el.remove();
+            }
+        });
+    }
+}
+
+function updateReadReceipt(messageId) {
+    const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageEl) {
+        const readIndicators = messageEl.querySelectorAll('.message-time span');
+        if (readIndicators.length > 1) {
+            readIndicators[1].textContent = '✓✓';
+            readIndicators[1].style.color = 'var(--neon-cyan)';
+        }
+    }
+}
+
+function scrollToBottom() {
+    const messagesArea = document.getElementById('messagesArea');
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+
+function getCSRFToken() {
+    const token = document.querySelector('meta[name="csrf-token"]');
+    return token ? token.content : '';
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    initSocket();
+    formatTimestamps();
+    scrollToBottom();
+    
+    // Click outside to close menu
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#messageMenu') && !e.target.closest('[onclick*="showMessageMenu"]')) {
+            hideMessageMenu();
+        }
+    });
+});
+</script>
+{% endblock %}
+
