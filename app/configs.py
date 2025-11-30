@@ -47,11 +47,15 @@ class DevConf(Config):
 class ProdConf(Config):
     SECRET_KEY = os.getenv("SECRET_KEY") or os.urandom(32).hex()
     # Use DB_URI from env, or fallback to SQLite
-    if not os.getenv("DB_URI"):
-        instance_path = os.path.join(basedir, 'instance')
-        os.makedirs(instance_path, exist_ok=True)
-        db_file = os.path.join(instance_path, 'site.db')
-        SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_file}"
+    _db_uri = os.getenv("DB_URI")
+    if _db_uri:
+        SQLALCHEMY_DATABASE_URI = _db_uri
+    else:
+        # Fallback to SQLite if DB_URI not set
+        _instance_path = os.path.join(basedir, 'instance')
+        os.makedirs(_instance_path, exist_ok=True)
+        _db_file = os.path.join(_instance_path, 'site.db')
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{_db_file}"
     # Production cache configuration - uncomment and configure based on your setup
     # CACHE_TYPE = "RedisCache"
     # CACHE_REDIS_URL = os.getenv("REDIS_URL")
