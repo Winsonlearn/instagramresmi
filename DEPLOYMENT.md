@@ -1,173 +1,154 @@
-# 🚀 Deployment Guide untuk AA Panel
+# 🚀 Panduan Deployment VPS
 
-## 📋 Informasi Project
+## ✅ Langkah-langkah Setup di VPS
 
-- **Repository**: https://github.com/Winsonlearn/instagramresmi.git
-- **Port untuk Winson**: `9004`
-- **Domain**: `winson.instagram-igs.my.id`
-- **Project Path**: `/www/wwwroot/instagramresmi`
-
----
-
-## ✅ Langkah-langkah Deployment
-
-### 1. Login ke AA Panel
-
-- **Link**: https://103.245.38.109:28233/03f7a70e
-- **Username**: zzgvwppt
-- **Password**: a3a577e8
-
----
-
-### 2. Clone Project di Terminal
-
-Masuk ke **Terminal** di AA Panel, lalu jalankan:
-
-```bash
-cd /www/wwwroot
-git clone https://github.com/Winsonlearn/instagramresmi.git instagramresmi
-chown -R www:www instagramresmi
-chmod -R 775 instagramresmi
-```
-
----
-
-### 3. Setup Python Project
-
-Masuk ke **Python Manager** → **Add Project**
-
-**Konfigurasi Project:**
-
-- **Project Name**: `instagramresmi-winson` (atau nama lain yang unik)
-- **Python Version**: `3.12` (atau sesuai yang tersedia)
-- **Project Path**: `/www/wwwroot/instagramresmi`
-- **Framework**: `Flask`
-- **Startup File**: `wsgi.py`
-- **Port**: `9004` ⚠️ **PENTING: Port untuk Winson adalah 9004**
-- **Run User**: `www`
-
-**Command untuk Run:**
-
+### 1. Masuk ke folder project
 ```bash
 cd /www/wwwroot/instagramresmi
-pip install -r requirements.txt
-gunicorn --worker-class eventlet -w 1 wsgi:app -b 127.0.0.1:9004
 ```
 
-**⚠️ NOTICE**: 
-- Jika ada pop-up, **JANGAN di-refresh atau di-tutup**, biarkan dulu
-- Pastikan port **9004** (untuk Winson) tidak digunakan oleh project lain
+### 2. Pastikan semua file ada
+```bash
+ls -la
+# Harus ada: wsgi.py, main.py, requirements.txt, app/
+```
+
+### 3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Setup environment variables
+Buat file `.env` di root project:
+```bash
+nano .env
+```
+
+Isi dengan:
+```env
+FLASK_DEBUG=
+SECRET_KEY=your-secret-key-here-minimal-32-characters
+DB_URI=sqlite:///instance/site.db
+```
+
+### 5. Inisialisasi database
+```bash
+python -c "from app import create_app; app = create_app(); from app.extension import db; db.create_all()"
+```
+
+### 6. Jalankan dengan Gunicorn
+```bash
+gunicorn --worker-class eventlet -w 1 wsgi:app -b 127.0.0.1:5000
+```
+
+**Catatan:** Aplikasi akan berjalan di `127.0.0.1:5000` (localhost). Web server (Nginx/Apache) harus dikonfigurasi untuk proxy ke port ini.
+
+### 7. Setup sebagai service (systemd) - OPSIONAL
+
+Buat file `/etc/systemd/system/instagramresmi.service`:
+```ini
+[Unit]
+Description=Instagram Clone Gunicorn App
+After=network.target
+
+[Service]
+User=www
+Group=www
+WorkingDirectory=/www/wwwroot/instagramresmi
+Environment="PATH=/usr/bin:/usr/local/bin"
+ExecStart=/usr/local/bin/gunicorn --worker-class eventlet -w 1 wsgi:app -b 127.0.0.1:5000
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Kemudian:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable instagramresmi
+sudo systemctl start instagramresmi
+sudo systemctl status instagramresmi
+```
+
+### 8. Konfigurasi Nginx (jika pakai Nginx)
+
+Edit file konfigurasi Nginx untuk domain `winson.instagram-igs.my.id`:
+
+```nginx
+server {
+    listen 80;
+    server_name winson.instagram-igs.my.id;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket support untuk SocketIO
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Static files
+    location /static {
+        alias /www/wwwroot/instagramresmi/app/static;
+        expires 30d;
+    }
+
+    # Uploaded files
+    location /uploads {
+        alias /www/wwwroot/instagramresmi/uploads;
+        expires 30d;
+    }
+}
+```
+
+Reload Nginx:
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
 ---
 
-### 4. Setup Website
+## 🔍 Troubleshooting
 
-Masuk ke **Website** → **Add Site**
+### Cek apakah aplikasi berjalan
+```bash
+ps aux | grep gunicorn
+netstat -tulpn | grep 5000
+```
 
-**Konfigurasi Website:**
+### Cek log error
+```bash
+# Jika pakai systemd
+sudo journalctl -u instagramresmi -f
 
-- **Domain**: `winson.instagram-igs.my.id`
-- **Site Directory**: `/www/wwwroot/instagramresmi`
-- **PHP Version**: Tidak perlu (karena ini Python Flask)
+# Atau cek log langsung
+tail -f /var/log/nginx/error.log
+```
 
-Setelah website dibuat, klik **ikon bulu burung** di domain untuk masuk ke pengaturan.
+### Test aplikasi langsung
+```bash
+curl http://127.0.0.1:5000
+```
 
----
-
-### 5. Setup Reverse Proxy
-
-Di halaman website, masuk ke bagian **Reverse Proxy** → **Add Proxy**
-
-**Konfigurasi Reverse Proxy:**
-
-- **Domain**: `winson.instagram-igs.my.id`
-- **Target URL**: `http://127.0.0.1:9004` ⚠️ **PASTIKAN PORT 9004**
-- **Send Domain**: ✅ Centang
-- **WebSocket**: ✅ Centang (penting untuk SocketIO)
-
-**⚠️ PENTING**: 
-- Target URL harus `http://127.0.0.1:9004` (bukan port lain)
-- WebSocket harus diaktifkan karena aplikasi menggunakan Flask-SocketIO
-
----
-
-### 6. Restart Apache
-
-Setelah semua konfigurasi selesai, **RESTART APACHE** di AA Panel.
+### Cek permission folder
+```bash
+chmod -R 755 /www/wwwroot/instagramresmi
+chown -R www:www /www/wwwroot/instagramresmi
+```
 
 ---
 
-## 🔍 Verifikasi Deployment
+## 📝 Catatan Penting
 
-Setelah deployment, cek:
-
-1. **Python App Running**: Pastikan di Python Manager status project adalah "Running"
-2. **Website Accessible**: Buka `https://winson.instagram-igs.my.id` di browser
-3. **SocketIO Working**: Test fitur real-time (chat, notifications) apakah berfungsi
-
----
-
-## 📝 Checklist Deployment
-
-- [ ] Login ke AA Panel
-- [ ] Clone project dari GitHub
-- [ ] Set permissions (chown & chmod)
-- [ ] Install dependencies (`pip install -r requirements.txt`)
-- [ ] Buat Python Project di Python Manager (Port: 9004)
-- [ ] Buat Website dengan domain `winson.instagram-igs.my.id`
-- [ ] Setup Reverse Proxy ke `http://127.0.0.1:9004`
-- [ ] Enable WebSocket di Reverse Proxy
-- [ ] Restart Apache
-- [ ] Test website di browser
-
----
-
-## 🐛 Troubleshooting
-
-### Port sudah digunakan
-- Cek port lain yang tersedia atau hentikan aplikasi yang menggunakan port 9004
-
-### SocketIO tidak bekerja
-- Pastikan WebSocket diaktifkan di Reverse Proxy
-- Pastikan menggunakan `eventlet` worker: `--worker-class eventlet`
-
-### Permission denied
-- Pastikan menjalankan: `chown -R www:www instagramresmi` dan `chmod -R 775 instagramresmi`
-
-### Dependencies error
-- Pastikan Python version >= 3.12
-- Install ulang: `pip install -r requirements.txt --upgrade`
-
----
-
-## 📌 Catatan Penting
-
-1. **Port Assignment**:
-   - 9001: KEVIN
-   - 9002: KEVIN-TEST
-   - 9003: VINO
-   - 9004: **WINSON** ← Port kamu
-   - 9005: LEWIS
-   - 9006: ARTHA
-   - 9007: DANIELE
-
-2. **Domain yang Diizinkan**:
-   - `lewis.instagram-igs.my.id`
-   - `artha.instagram-igs.my.id`
-   - `vino.instagram-igs.my.id`
-   - `winson.instagram-igs.my.id` ← Domain kamu
-   - `daniele.instagram-igs.my.id`
-
-3. **Jangan**:
-   - Menggunakan port yang sudah dipakai orang lain
-   - Menggunakan domain selain yang ada di list
-   - Menghapus atau mengubah project orang lain di Python Manager
-
----
-
-## 🔗 Link Penting
-
-- **AA Panel**: https://103.245.38.109:28233/03f7a70e
-- **GitHub Repo**: https://github.com/Winsonlearn/instagramresmi.git
-- **Domain**: https://winson.instagram-igs.my.id
+1. **Port 5000** harus diakses dari localhost saja (127.0.0.1), bukan 0.0.0.0
+2. **Web server** (Nginx/Apache) harus dikonfigurasi untuk proxy ke port 5000
+3. **Database** harus diinisialisasi sebelum pertama kali run
+4. **Environment variables** (.env) harus disetup dengan benar
+5. **SocketIO** memerlukan WebSocket support di Nginx
 

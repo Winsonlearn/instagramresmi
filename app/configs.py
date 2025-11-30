@@ -45,7 +45,13 @@ class DevConf(Config):
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_file}"
 
 class ProdConf(Config):
-    SECRET_KEY = os.getenv("SECRET_KEY")
+    SECRET_KEY = os.getenv("SECRET_KEY") or os.urandom(32).hex()
+    # Use DB_URI from env, or fallback to SQLite
+    if not os.getenv("DB_URI"):
+        instance_path = os.path.join(basedir, 'instance')
+        os.makedirs(instance_path, exist_ok=True)
+        db_file = os.path.join(instance_path, 'site.db')
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{db_file}"
     # Production cache configuration - uncomment and configure based on your setup
     # CACHE_TYPE = "RedisCache"
     # CACHE_REDIS_URL = os.getenv("REDIS_URL")
