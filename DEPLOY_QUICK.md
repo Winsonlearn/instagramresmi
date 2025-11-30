@@ -9,12 +9,12 @@
 
 ## 📝 Langkah Cepat
 
-### 1️⃣ Terminal - Clone Project
+### 1️⃣ Terminal - Update Project (Sudah Pull)
 ```bash
-cd /www/wwwroot
-git clone https://github.com/Winsonlearn/instagramresmi.git instagramresmi
-chown -R www:www instagramresmi
-chmod -R 775 instagramresmi
+cd /www/wwwroot/instagramresmi
+chown -R www:www /www/wwwroot/instagramresmi
+chmod -R 775 /www/wwwroot/instagramresmi
+pip install -r requirements.txt
 ```
 
 ### 2️⃣ Python Manager - Add Project
